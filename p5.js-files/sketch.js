@@ -10,6 +10,7 @@ let dastgahSelector;
 let currentDastgahId;
 let processedData = [];
 let angleOffset = 0;      // Global offset of entire galaxy
+let hoveredPlanet = null;
 
 function setup() {
     createCanvas(600, 600);
@@ -32,6 +33,27 @@ function draw() {
     // Slow orbiting effect
     angleOffset += 0.005;
 
+    cursor(ARROW); // Assuming we aren't hovered over something
+    hoveredPlanet = null;
+
+    // Calculate (x, y) position of each planet
+    for (const planet of processedData) {
+        const totalAngle = planet.angle + angleOffset;
+        const planetScreenX = width / 2 + cos(totalAngle) * orbitRadius;
+        const planetScreenY = height / 2 + sin(totalAngle) * orbitRadius;
+
+        // Distance between mouse and planet
+        const distance = dist(mouseX, mouseY, planetScreenX, planetScreenY);
+
+        // If the distance is less than half the planet's size, you're hovering
+        if (distance < planet.currentSize / 2) {
+            hoveredPlanet = planet;
+            cursor(HAND);
+            break;
+        }
+
+    }
+
     // Draw the Center Star (Dastgah Name)
     fill(255, 220, 150);
     noStroke();
@@ -45,6 +67,7 @@ function draw() {
     for (const planet of processedData) {
         // Smooth transition for planet size
         planet.currentSize = lerp(planet.currentSize, planet.targetSize, 0.05);
+        let currentStrokeWeight = 1;
 
         push();
         rotate(planet.angle + angleOffset);
@@ -52,17 +75,47 @@ function draw() {
         const y = 0;
 
         // Draw the planet
-        fill(150, 180, 255, 200);
-        stroke(255);
+        if (planet === hoveredPlanet) {
+            fill(255, 255, 100, 220); // Bright yellow
+            stroke(255);
+            currentStrokeWeight = 2;
+        } else {
+            fill(150, 180, 255, 200);
+            stroke(255);
+        }
+
+        strokeWeight(currentStrokeWeight);
         ellipse(x, y, planet.currentSize, planet.currentSize);
 
         // Draw the planet's label
         fill(255);
         noStroke();
         textSize(14);
-        text(planet.name, x + planet.currentSize / 2 + 10, y); // Place text next to planet
+        const textOffset = planet.currentSize / 2 + (currentStrokeWeight / 2) + 10;
+        text(planet.name, x + textOffset, y); // Place text next to planet
 
         pop();
+    }
+
+    // Draw tooltip
+    if (hoveredPlanet) {
+        resetMatrix();
+        const rawCount = fullData[currentDastgahId][hoveredPlanet.name];
+        const tooltipText = `${hoveredPlanet.name}\nRaw Count: ${rawCount}`;
+
+        textSize(14);
+        const textPadding = 10;
+        const textW = textWidth(tooltipText) + textPadding;
+        const textH = 40;
+        const tooltipX = mouseX + 12;
+        const tooltipY = mouseY + 12;
+
+        noStroke();
+        fill(0, 0, 0, 200);
+        rect(tooltipX, tooltipY, textW, textH, 5);
+        fill(255);
+        textAlign(LEFT, TOP);
+        text(tooltipText, tooltipX + textPadding / 2, tooltipY + textPadding / 2);
     }
 }
 

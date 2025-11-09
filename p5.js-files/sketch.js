@@ -12,6 +12,21 @@ let processedData = [];
 let angleOffset = 0;      // Global offset of entire galaxy
 let hoveredPlanet = null;
 
+// AUDIO ENGINE VARIABLES
+let osc1, osc2;           // Sound generators
+let envelope;             // Sound's volume
+let audioStarted = false;
+
+const semitoneMap = {
+    "P1": 0, "A1": 1, "m2": 1, "d2": 0,
+    "M2": 2, "A2": 3, "d3": 2,
+    "m3": 3, "M3": 4, "d4": 4,
+    "P4": 5, "A4": 6,
+    "d5": 6, "P5": 7, "A5": 8,
+    "m6": 8, "M6": 9,
+    "d7": 9, "m7": 10, "M7": 11
+};
+
 function setup() {
     createCanvas(600, 600);
 
@@ -24,6 +39,11 @@ function setup() {
 
     currentDastgahId = dastgahIds[0];
     dastgahSelector.changed(changeDastgah); // When user selects new option
+
+    envelope = new p5.Env(0.01, 0.5, 0.1, 0.2); // "Pluck" sound
+    osc1 = new p5.Oscillator('sine');
+    osc2 = new p5.Oscillator('sine');
+
     initializeGalaxy();
 }
 
@@ -117,6 +137,39 @@ function draw() {
         textAlign(LEFT, TOP);
         text(tooltipText, tooltipX + textPadding / 2, tooltipY + textPadding / 2);
     }
+}
+
+// Automatically called by p5.js whenever mouse is clicked
+function mousePressed() {
+    // Unlock sound on first click, for browsers
+    if (!audioStarted) {
+        userStartAudio();
+        audioStarted = true;
+        osc1.start();
+        osc2.start();
+    }
+
+    if (hoveredPlanet) {
+        playInterval(hoveredPlanet.name);
+    }
+}
+
+function playInterval(intervalName) {
+    const baseFreq = 261.63; // Middle C
+    const semitones = semitoneMap[intervalName];
+
+    if (semitones === undefined) {
+        return;
+    }
+
+    // Calculate the frequency of the second note with
+    // equal temperament formula.
+    const secondFreq = baseFreq * Math.pow(2, semitones / 12);
+    osc1.freq(baseFreq);
+    osc2.freq(secondFreq);
+
+    envelope.play(osc1);
+    envelope.play(osc2);
 }
 
 // Event handler for dropdown menu

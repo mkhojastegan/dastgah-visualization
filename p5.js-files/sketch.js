@@ -1,9 +1,7 @@
-// TO BE REPLACED IN WEB EDITOR
-
 // CONFIGURATION
 const orbitRadius = 200;  // How far planets are from the center
 const minPlanetSize = 10; // The size of the least common interval
-const maxPlanetSize = 80  // The size of the most common interval
+const maxPlanetSize = 80;  // The size of the most common interval
 
 // GLOBAL VARIABLES
 let dastgahSelector;
@@ -12,6 +10,8 @@ let processedData = [];
 let angleOffset = 0;      // Global offset of entire galaxy
 let hoveredPlanet = null;
 let stars = [];
+let hud;
+let pickingGraphics;     // New offscreen buffer for color picking
 
 // AUDIO ENGINE VARIABLES
 let osc1, osc2;           // Sound generators
@@ -30,6 +30,12 @@ const semitoneMap = {
 
 function setup() {
     createCanvas(600, 600, WEBGL);
+    
+    // Create offscreen buffer for color picking
+    pickingGraphics = createGraphics(width, height, WEBGL);
+    pickingGraphics.noStroke();
+    
+    hud = createGraphics(width, height);
 
     dastgahSelector = select('#dastgahSelector');
 
@@ -57,6 +63,10 @@ function setup() {
 }
 
 function draw() {
+    // First: Draw to picking buffer (invisible)
+    drawPickingScene();
+    
+    // Then: Draw main scene
     background(10, 10, 20); // "Space blue"
 
     // Add camera controls
@@ -76,9 +86,10 @@ function draw() {
     // Slow orbiting effect
     angleOffset += 0.005;
 
-    // Draw 3D Planets
+    // Check for hovered planets using color picking
+    checkHoverWithPicking();
 
-    // Calculate (x, y) position of each planet
+    // Draw 3D Planets
     for (const planet of processedData) {
         planet.currentSize = lerp(planet.currentSize, planet.targetSize, 0.05);
 
@@ -88,12 +99,94 @@ function draw() {
         translate(orbitRadius, 0, 0);
 
         noStroke();
-        specularMaterial(150, 180, 255);
-        shininess(50);
+
+        if (planet === hoveredPlanet) {
+            emissiveMaterial(255, 255, 100); // Looks like it's glowing
+        } else {
+            specularMaterial(150, 180, 255);
+            shininess(50);
+        }
+
         sphere(planet.currentSize / 2);
         pop();
     }
 
+    drawHUD();
+}
+
+// Draw simplified version of scene to offscreen buffer for picking
+function drawPickingScene() {
+    pickingGraphics.clear();
+    pickingGraphics.background(0); // Black background for "no planet"
+    
+    // Copy camera state from main canvas
+    pickingGraphics.setCamera(_renderer._curCamera);
+    
+    // Draw each planet with unique color
+    for (let i = 0; i < processedData.length; i++) {
+        const planet = processedData[i];
+        const totalAngle = planet.angle + angleOffset;
+        
+        pickingGraphics.push();
+        pickingGraphics.rotateY(totalAngle);
+        pickingGraphics.translate(orbitRadius, 0, 0);
+        
+        // Assign unique color based on planet index
+        const colorValue = i + 1; // Avoid black (0)
+        pickingGraphics.fill(colorValue, 0, 0);
+        pickingGraphics.sphere(planet.currentSize / 2);
+        
+        pickingGraphics.pop();
+    }
+}
+
+// Check hover using color picking buffer
+function checkHoverWithPicking() {
+    hoveredPlanet = null;
+    cursor(ARROW);
+    
+    // Get color under mouse from picking buffer
+    const pixelColor = pickingGraphics.get(mouseX, mouseY);
+    
+    // Convert red channel to planet index (we stored index+1 in red channel)
+    const planetIndex = pixelColor[0] - 1;
+    
+    if (planetIndex >= 0 && planetIndex < processedData.length) {
+        hoveredPlanet = processedData[planetIndex];
+        cursor(HAND);
+    }
+}
+
+// Function to draw the 2D HUD
+function drawHUD() {
+    hud.clear();
+
+    hud.fill(255, 220, 150);
+    hud.noStroke();
+    hud.textAlign(CENTER, CENTER);
+    hud.textSize(40);
+    hud.text(currentDastgahId, width / 2, height / 2);
+
+    if (hoveredPlanet) {
+        const rawCount = fullData[currentDastgahId][hoveredPlanet.name];
+        const tooltipText = `Interval: ${hoveredPlanet.name}\nCount: ${rawCount}`;
+        hud.textSize(14);
+
+        const textPadding = 10;
+        const textW = hud.textWidth(tooltipText) + textPadding;
+        const textH = 45;
+        const tooltipX = mouseX + 12;
+        const tooltipY = mouseY + 12;
+
+        hud.noStroke();
+        hud.fill(0, 0, 0, 200);
+        hud.rect(tooltipX, tooltipY, textW, textH, 5);
+        hud.fill(255);
+        hud.textAlign(LEFT, TOP);
+        hud.text(tooltipText, tooltipX + textPadding / 2, tooltipY + textPadding / 2);
+    }
+
+    image(hud, -width/2, -height/2);
 }
 
 // Automatically called by p5.js whenever mouse is clicked
@@ -104,6 +197,10 @@ function mousePressed() {
         audioStarted = true;
         osc1.start();
         osc2.start();
+    }
+
+    if (hoveredPlanet) {
+        playInterval(hoveredPlanet.name);
     }
 }
 
@@ -163,5 +260,3 @@ function recalculateGalaxy() {
         planet.targetSize = map(count, 0, maxCount, minPlanetSize, maxPlanetSize);
     }
 }
-
-

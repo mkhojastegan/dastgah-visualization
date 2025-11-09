@@ -11,6 +11,7 @@ let currentDastgahId;
 let processedData = [];
 let angleOffset = 0;      // Global offset of entire galaxy
 let hoveredPlanet = null;
+let stars = [];
 
 // AUDIO ENGINE VARIABLES
 let osc1, osc2;           // Sound generators
@@ -28,7 +29,7 @@ const semitoneMap = {
 };
 
 function setup() {
-    createCanvas(600, 600);
+    createCanvas(600, 600, WEBGL);
 
     dastgahSelector = select('#dastgahSelector');
 
@@ -40,103 +41,59 @@ function setup() {
     currentDastgahId = dastgahIds[0];
     dastgahSelector.changed(changeDastgah); // When user selects new option
 
+    // Create starfield
+    for (let i = 0; i < 500; i++) {
+        stars.push(createVector(random(-1000, 1000), random(-1000, 1000), random(-1000, 1000)));
+    }
+
     envelope = new p5.Env(0.01, 0.5, 0.1, 0.2); // "Pluck" sound
     osc1 = new p5.Oscillator('sine');
     osc2 = new p5.Oscillator('sine');
+
+    osc1.amp(envelope);
+    osc2.amp(envelope);
 
     initializeGalaxy();
 }
 
 function draw() {
-    background(20, 20, 30);
+    background(10, 10, 20); // "Space blue"
+
+    // Add camera controls
+    orbitControl();
+
+    // Draw atmosphere
+    stroke(255);
+    strokeWeight(1.5);
+    for (const star of stars) {
+        point(star.x, star.y, star.z);
+    }
+
+    // Add lighting
+    ambientLight(100);
+    pointLight(255, 255, 255, 200, 200, 200);
 
     // Slow orbiting effect
     angleOffset += 0.005;
 
-    cursor(ARROW); // Assuming we aren't hovered over something
-    hoveredPlanet = null;
+    // Draw 3D Planets
 
     // Calculate (x, y) position of each planet
     for (const planet of processedData) {
-        const totalAngle = planet.angle + angleOffset;
-        const planetScreenX = width / 2 + cos(totalAngle) * orbitRadius;
-        const planetScreenY = height / 2 + sin(totalAngle) * orbitRadius;
-
-        // Distance between mouse and planet
-        const distance = dist(mouseX, mouseY, planetScreenX, planetScreenY);
-
-        // If the distance is less than half the planet's size, you're hovering
-        if (distance < planet.currentSize / 2) {
-            hoveredPlanet = planet;
-            cursor(HAND);
-            break;
-        }
-
-    }
-
-    // Draw the Center Star (Dastgah Name)
-    fill(255, 220, 150);
-    noStroke();
-    textAlign(CENTER, CENTER);
-    textSize(40);
-    text(currentDastgahId, width / 2, height / 2); // Draw text in the middle
-
-    // Draw the orbiting planets
-    translate(width / 2, height / 2);
-
-    for (const planet of processedData) {
-        // Smooth transition for planet size
         planet.currentSize = lerp(planet.currentSize, planet.targetSize, 0.05);
-        let currentStrokeWeight = 1;
 
         push();
-        rotate(planet.angle + angleOffset);
-        const x = orbitRadius;
-        const y = 0;
+        const totalAngle = planet.angle + angleOffset;
+        rotateY(totalAngle);
+        translate(orbitRadius, 0, 0);
 
-        // Draw the planet
-        if (planet === hoveredPlanet) {
-            fill(255, 255, 100, 220); // Bright yellow
-            stroke(255);
-            currentStrokeWeight = 2;
-        } else {
-            fill(150, 180, 255, 200);
-            stroke(255);
-        }
-
-        strokeWeight(currentStrokeWeight);
-        ellipse(x, y, planet.currentSize, planet.currentSize);
-
-        // Draw the planet's label
-        fill(255);
         noStroke();
-        textSize(14);
-        const textOffset = planet.currentSize / 2 + (currentStrokeWeight / 2) + 10;
-        text(planet.name, x + textOffset, y); // Place text next to planet
-
+        specularMaterial(150, 180, 255);
+        shininess(50);
+        sphere(planet.currentSize / 2);
         pop();
     }
 
-    // Draw tooltip
-    if (hoveredPlanet) {
-        resetMatrix();
-        const rawCount = fullData[currentDastgahId][hoveredPlanet.name];
-        const tooltipText = `${hoveredPlanet.name}\nRaw Count: ${rawCount}`;
-
-        textSize(14);
-        const textPadding = 10;
-        const textW = textWidth(tooltipText) + textPadding;
-        const textH = 40;
-        const tooltipX = mouseX + 12;
-        const tooltipY = mouseY + 12;
-
-        noStroke();
-        fill(0, 0, 0, 200);
-        rect(tooltipX, tooltipY, textW, textH, 5);
-        fill(255);
-        textAlign(LEFT, TOP);
-        text(tooltipText, tooltipX + textPadding / 2, tooltipY + textPadding / 2);
-    }
 }
 
 // Automatically called by p5.js whenever mouse is clicked
@@ -147,10 +104,6 @@ function mousePressed() {
         audioStarted = true;
         osc1.start();
         osc2.start();
-    }
-
-    if (hoveredPlanet) {
-        playInterval(hoveredPlanet.name);
     }
 }
 
@@ -168,8 +121,7 @@ function playInterval(intervalName) {
     osc1.freq(baseFreq);
     osc2.freq(secondFreq);
 
-    envelope.play(osc1);
-    envelope.play(osc2);
+    envelope.play();
 }
 
 // Event handler for dropdown menu

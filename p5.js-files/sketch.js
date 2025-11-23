@@ -2,6 +2,7 @@
 const orbitRadius = 200;  // How far planets are from the center
 const minPlanetSize = 10; // The size of the least common interval
 const maxPlanetSize = 80;  // The size of the most common interval
+const sunSize = 120;      // The size of the central sun
 
 // GLOBAL VARIABLES
 let dastgahSelector;
@@ -12,6 +13,7 @@ let hoveredPlanet = null;
 let stars = [];
 let hud;
 let pickingGraphics;     // New offscreen buffer for color picking
+let sunTexture;
 
 // AUDIO ENGINE VARIABLES
 let osc1, osc2;           // Sound generators
@@ -62,6 +64,10 @@ function setup() {
     pickingGraphics.noStroke();
     
     hud = createGraphics(width, height);
+
+    sunTexture = createGraphics(256, 256);
+    sunTexture.textAlign(CENTER, CENTER);
+    sunTexture.textSize(100);
 
     dastgahSelector = select('#dastgahSelector');
 
@@ -126,6 +132,15 @@ function draw() {
 
     // Slow orbiting effect
     angleOffset += 0.005;
+
+    // Draw the sun
+    push();
+    noStroke();
+    emissiveMaterial(255, 180, 80);
+    texture(sunTexture);
+    rotateY(millis() / 10000);
+    sphere(sunSize / 2);
+    pop();
 
     // Draw 3D Planets
     for (const planet of processedData) {
@@ -197,13 +212,12 @@ function checkHoverWithPicking() {
 
 // Function to draw the 2D HUD
 function drawHUD() {
-    hud.clear();
+    // Update sun texture
+    sunTexture.background(255, 160, 50); // Fiery orange
+    sunTexture.fill(0);
+    sunTexture.text(currentDastgahId, sunTexture.width / 2, sunTexture.height / 2);
 
-    hud.fill(255, 220, 150);
-    hud.noStroke();
-    hud.textAlign(CENTER, CENTER);
-    hud.textSize(40);
-    hud.text(currentDastgahId, width / 2, height / 2);
+    hud.clear();
 
     if (hoveredPlanet) {
         const shortName = hoveredPlanet.name;

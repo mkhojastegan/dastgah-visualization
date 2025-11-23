@@ -113,20 +113,26 @@ function setup() {
 }
 
 function draw() {
+    angleOffset += 0.005;
 
     // Add camera controls
     orbitControl();
 
     // Draw to picking buffer (invisible)
     drawPickingScene();
-
-    // Check for hovered planets using color picking
     checkHoverWithPicking();
+
+    // 3D Scene
+    background(10, 10, 20);
+    drawAtmosphere();
+    drawSolarSystem();
     
-    // Then: Draw main scene
-    background(10, 10, 20); // "Space blue"
+    // Draw HUD
+    drawHUD();
 
+}
 
+function drawAtmosphere() {
     // Draw atmosphere
     stroke(255);
     strokeWeight(1.5);
@@ -137,7 +143,9 @@ function draw() {
     // Add lighting
     ambientLight(100);
     pointLight(255, 255, 255, 200, 200, 200);
+}
 
+function drawSolarSystem() {
     // Slow orbiting effect
     angleOffset += 0.005;
 
@@ -174,8 +182,8 @@ function draw() {
         pop();
     }
 
-    drawHUD();
 }
+
 
 // Draw simplified version of scene to offscreen buffer for picking
 function drawPickingScene() {
@@ -249,8 +257,14 @@ function drawHUD() {
         hud.textAlign(LEFT, TOP);
         hud.text(tooltipText, tooltipX + textPadding / 2, tooltipY + textPadding / 2);
     }
+    
+    let camera = _renderer._curCamera;
 
-    image(hud, -width/2, -height/2);
+    camera.ortho();
+
+    image(hud, -width / 2, -height / 2);
+
+    camera.perspective();
 }
 
 // Automatically called by p5.js whenever mouse is clicked

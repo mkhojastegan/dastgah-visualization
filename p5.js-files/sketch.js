@@ -44,6 +44,16 @@ const dastgahNameMap = {
     "D13": "Raastpanjgaah"
 };
 
+const intervalFullNameMap = {
+    "P1": "Perfect Unison", "d1": "diminished Unison", "A1": "Augmented Unison",
+    "m2": "minor 2nd",      "M2": "Major 2nd",         "A2": "Augmented 2nd",
+    "m3": "minor 3rd",      "M3": "Major 3rd",         "d3": "diminished 3rd",
+    "P4": "Perfect 4th",    "A4": "Augmented 4th",     "d4": "diminished 4th",
+    "P5": "Perfect 5th",    "A5": "Augmented 5th",     "d5": "diminished 5th",
+    "m6": "minor 6th",      "M6": "Major 6th",
+    "m7": "minor 7th",      "M7": "Major 7th"  
+};
+
 function setup() {
     createCanvas(600, 600, WEBGL);
     
@@ -196,8 +206,10 @@ function drawHUD() {
     hud.text(currentDastgahId, width / 2, height / 2);
 
     if (hoveredPlanet) {
-        const rawCount = fullData[currentDastgahId][hoveredPlanet.name];
-        const tooltipText = `Interval: ${hoveredPlanet.name}\nCount: ${rawCount}`;
+        const shortName = hoveredPlanet.name;
+        const fullName = intervalFullNameMap[shortName] || "Unkknown Interval";
+        const rawCount = fullData[currentDastgahId][shortName];
+        const tooltipText = `${shortName} - ${fullName}\nCount: ${rawCount}`;
         hud.textSize(14);
 
         const textPadding = 10;

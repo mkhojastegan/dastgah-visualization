@@ -179,6 +179,16 @@ function drawSolarSystem() {
         }
 
         sphere(planet.currentSize / 2);
+
+        // Rings for perfects
+        if (planet.name.charAt(0) === "P") {
+            rotateX(HALF_PI);
+
+            const ringRadius = planet.currentSize * 0.8;
+            const ringThickness = planet.currentSize * 0.1;
+            torus(ringRadius, ringThickness);
+        }
+
         pop();
     }
 
@@ -206,6 +216,14 @@ function drawPickingScene() {
         const colorValue = i + 1; // Avoid black (0)
         pickingGraphics.fill(colorValue, 0, 0);
         pickingGraphics.sphere(planet.currentSize / 2);
+
+        if (planet.name.charAt(0) === "P") {
+            pickingGraphics.rotateX(HALF_PI);
+            const ringRadius = planet.currentSize * 0.8;
+            const ringThickness = planet.currentSize * 0.1;
+
+            pickingGraphics.torus(ringRadius, ringThickness * 1.5);
+        }
         
         pickingGraphics.pop();
     }

@@ -40,6 +40,14 @@ function setup() {
     dastgahSelector = select('#dastgahSelector');
 
     const dastgahIds = Object.keys(fullData).sort();
+
+    // Sort for menu
+    dastgahIds.sort((a, b) => {
+        const numA = parseInt(a.substring(1));
+        const numB = parseInt(b.substring(1));
+        return numA - numB;
+    });
+
     for (const id of dastgahIds) {
         dastgahSelector.option(id);
     }
@@ -63,14 +71,19 @@ function setup() {
 }
 
 function draw() {
-    // First: Draw to picking buffer (invisible)
+
+    // Add camera controls
+    orbitControl();
+
+    // Draw to picking buffer (invisible)
     drawPickingScene();
+
+    // Check for hovered planets using color picking
+    checkHoverWithPicking();
     
     // Then: Draw main scene
     background(10, 10, 20); // "Space blue"
 
-    // Add camera controls
-    orbitControl();
 
     // Draw atmosphere
     stroke(255);
@@ -85,9 +98,6 @@ function draw() {
 
     // Slow orbiting effect
     angleOffset += 0.005;
-
-    // Check for hovered planets using color picking
-    checkHoverWithPicking();
 
     // Draw 3D Planets
     for (const planet of processedData) {

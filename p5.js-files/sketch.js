@@ -28,6 +28,22 @@ const semitoneMap = {
     "d7": 9, "m7": 10, "M7": 11
 };
 
+const dastgahNameMap = {
+    "D1": "Shur",
+    "D2": "Abu’aata",
+    "D3": "Zand",
+    "D4": "Afshaari",
+    "D5": "Dashti",
+    "D6": "Bayat-Kord",
+    "D7": "Mahur",
+    "D8": "Homaayun",
+    "D9": "Esfahaan",
+    "D10": "Segaah",
+    "D11": "Chahaargaah",
+    "D12": "Navah",
+    "D13": "Raastpanjgaah"
+};
+
 function setup() {
     createCanvas(600, 600, WEBGL);
     
@@ -49,10 +65,12 @@ function setup() {
     });
 
     for (const id of dastgahIds) {
-        dastgahSelector.option(id);
+        const name = dastgahNameMap[id] || "";
+        const label = `${id} - ${name}`;
+        dastgahSelector.option(label, id);
     }
 
-    currentDastgahId = dastgahIds[0];
+    currentDastgahId = dastgahSelector.value();
     dastgahSelector.changed(changeDastgah); // When user selects new option
 
     // Create starfield

@@ -56,6 +56,14 @@ const intervalFullNameMap = {
     "m7": "minor 7th",      "M7": "Major 7th"  
 };
 
+const qualityColorMap = {
+    'M': [255, 150, 80],  // Warm orange
+    'm': [80, 180, 255],  // Cool light blue
+    'P': [240, 240, 240], // Neutral silver 
+    'A': [100, 255, 100], // Tense green
+    'd': [200, 100, 255]  // Tense purple
+}
+
 function setup() {
     createCanvas(600, 600, WEBGL);
     
@@ -156,7 +164,9 @@ function draw() {
         if (planet === hoveredPlanet) {
             emissiveMaterial(255, 255, 100); // Looks like it's glowing
         } else {
-            specularMaterial(150, 180, 255);
+            const quality = planet.name.charAt(0);
+            const baseColor = qualityColorMap[quality] || [240, 240, 240];
+            specularMaterial(baseColor[0], baseColor[1], baseColor[2]);
             shininess(50);
         }
 
